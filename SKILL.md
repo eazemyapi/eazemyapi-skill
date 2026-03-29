@@ -1,251 +1,144 @@
 ---
 name: eazemyapi
-description: >
-  Expert knowledge for building with EazeMyAPI — an AI-powered no-code backend builder that auto-generates REST APIs from database tables.
-  Use this skill whenever the user mentions EazeMyAPI, asks how to integrate their frontend with EazeMyAPI, wants to write fetch/axios code
-  against EazeMyAPI endpoints, needs help designing a database schema for an EazeMyAPI project, is writing custom SQL queries to expose as
-  EazeMyAPI endpoints, wants to understand the URL structure or authentication pattern, or is building any SaaS/app on top of EazeMyAPI as
-  their backend. Also trigger for questions about EazeMyAPI projects by name (e.g. "my-project"), or whenever X-API-SIGNATURE appears in context.
+description: Use this skill whenever the user is building, designing, or extending EazeMyAPI(Backend Work Eliminated) an AI-powered backend-as-a-service (BaaS) platform. Trigger this skill for any of the following: building or designing EazeMyAPI dashboard UI or module pages, writing frontend integration code that calls EazeMyAPI APIs, designing database schemas and tables for an EazeMyAPI project, writing custom SQL queries to expose as endpoints, scaffolding or connecting SaaS products that use EazeMyAPI as their backend, or any mention of "EazeMyAPI", "eaze", "my BaaS", or "my backend". Always use this skill even if the request feels like a general UI, API, or architecture task — if EazeMyAPI is the context, this skill applies.
 ---
 
 # EazeMyAPI Skill
 
-EazeMyAPI is an AI-powered backend-as-a-service. You describe your app → AI designs the database → REST APIs are auto-generated instantly. No backend server code required.
+EazeMyAPI is an **AI-powered backend builder** that lets developers generate databases and REST APIs instantly — no backend server code needed. Users describe their app (or define tables manually), and EazeMyAPI generates the full REST API automatically.
 
-**Base API URL:** `https://api.eazemyapi.com`  
-**Docs:** `https://doc.eazemyapi.com`  
-**Dashboard:** `https://app.eazemyapi.com`
+> Full documentation: https://doc.eazemyapi.com
+
+This skill covers:
+1. **Frontend / UI** — EazeMyAPI dashboard pages, module UIs, components
+2. **Backend integration** — API calls, auth, data flows connecting products to EazeMyAPI
+3. **Schema design** — tables, field types, relationships, custom queries
 
 ---
 
-## URL Structure
+## How EazeMyAPI Works
 
-EazeMyAPI has **two distinct URL patterns** depending on the type of endpoint.
-
-### CRUD Endpoints (auto-generated per table)
-
+**Workflow:**
 ```
-https://api.eazemyapi.com/{project-name}/{table}/{version}/{action}
+Idea → Create Project → Define Tables → Generate APIs → Connect Frontend
 ```
 
-| Part | Description |
-|------|-------------|
-| `project-name` | Your project slug (e.g. `soche-india`) |
-| `table` | The table name (e.g. `posts`, `users`) |
-| `version` | API version — `v1`, `v2`, `v3`, etc. |
-| `action` | CRUD action — `list`, `show/:id`, `create`, `update/:id`, `delete/:id` |
+1. Create a **Project** (your app's namespace)
+2. Define **Database Tables** (with fields and types)
+3. EazeMyAPI **auto-generates REST endpoints** for all CRUD operations
+4. Add **Custom Queries** for joins, filters, aggregations
+5. Integrate via the **API** using `X-API-SIGNATURE` header
 
-**Examples:**
-```
-https://api.eazemyapi.com/soche-india/posts/v2/list
-https://api.eazemyapi.com/soche-india/posts/v2/show/:id
-https://api.eazemyapi.com/soche-india/posts/v2/create
-https://api.eazemyapi.com/soche-india/posts/v2/update/:id
-https://api.eazemyapi.com/soche-india/posts/v2/delete/:id
-```
+---
 
-### Custom / Raw Query Endpoints
+## API Reference
 
+### Base URL Structure
 ```
-https://api.eazemyapi.com/{project-name}/{version}/{custom-endpoint}
+https://api.eazemyapi.com/{project-name}/{version}/{endpoint}
 ```
 
-| Part | Description |
-|------|-------------|
-| `project-name` | Your project slug |
-| `version` | API version |
-| `custom-endpoint` | Name you gave the custom query (e.g. `posts-by-category`) |
+| Component | Description |
+|---|---|
+| `api.eazemyapi.com` | Base API server |
+| `{project-name}` | Your project identifier (e.g. `demo-project`) |
+| `{version}` | API version (e.g. `v2`) |
+| `{endpoint}` | Auto-generated or custom endpoint name |
 
 **Example:**
 ```
-https://api.eazemyapi.com/soche-india/v2/posts-by-category
+https://api.eazemyapi.com/demo-project/v2/get-single-user
 ```
-
-> **Key difference:** CRUD URLs have the **table name between project and version**. Custom query URLs go directly `project → version → endpoint` with no table in the path.
 
 ---
 
-## Authentication
+### Authentication
 
-Every request **must** include the API signature header:
-
+Every request must include the API signature header:
 ```
 X-API-SIGNATURE: <your-secret-key>
 ```
 
-Find your key: `Project → Settings → API Signature Key`
+Find your key at: **Project → Settings → API Signature Key**
 
 **Security rules:**
-- Never expose this key in frontend code directly
-- Store in environment variables (`.env`, Vercel env vars, etc.)
-- For public frontend apps, proxy through a serverless function (e.g. Vercel API route)
+- Never expose the key in frontend/public code
+- Store in environment variables
+- Rotate if compromised
+- If user-level access control is needed, implement auth on top
 
 ---
 
-## Auto-Generated CRUD Endpoints
+### Auto-Generated Endpoints
 
-When you create a table (e.g. `posts`), EazeMyAPI generates 5 endpoints automatically.
-Pattern: `/{project}/{table}/{version}/{action}`
+For every table, EazeMyAPI generates these endpoints automatically:
 
-| Action | Full URL Example | Method | Notes |
-|--------|-----------------|--------|-------|
-| `list` | `.../posts/v2/list` | GET | Returns array of all records |
-| `show/:id` | `.../posts/v2/show/1` | GET | ID in URL path |
-| `create` | `.../posts/v2/create` | POST | JSON body |
-| `update/:id` | `.../posts/v2/update/1` | POST | ID in URL, fields in JSON body |
-| `delete/:id` | `.../posts/v2/delete/1` | DELETE | ID in URL path |
+| Operation | Endpoint pattern | Method |
+|---|---|---|
+| Get all records | `get-{table}s` | GET |
+| Get one record | `get-single-{table}` | GET + `?id=` |
+| Create record | `create-{table}` | POST |
+| Update record | `update-{table}` | PUT |
+| Delete record | `delete-{table}` | DELETE + `?id=` |
 
-> **Note:** `update` uses **POST** (not PUT/PATCH). The record ID goes in the **URL path** for `show`, `update`, and `delete`.
+**Examples for a `user` table:**
+```
+GET    https://api.eazemyapi.com/my-project/v2/get-users
+GET    https://api.eazemyapi.com/my-project/v2/get-single-user?id=1
+POST   https://api.eazemyapi.com/my-project/v2/create-user
+PUT    https://api.eazemyapi.com/my-project/v2/update-user
+DELETE https://api.eazemyapi.com/my-project/v2/delete-user?id=1
+```
 
 ---
 
-## Response Format
+### Response Format
 
-All endpoints return this consistent shape:
+All responses follow this consistent JSON shape:
 
 ```json
 {
   "success": true,
   "message": "Data found.",
-  "data": { ... }
+  "data": []
 }
 ```
 
-- `success`: `true` or `false`
-- `message`: human-readable status
-- `data`: single object (show/create) or array (list)
+| Field | Description |
+|---|---|
+| `success` | `true` or `false` |
+| `message` | Human-readable result description |
+| `data` | Object (single) or Array (multiple) |
 
-**Error response:**
+**Single record:**
+```json
+{
+  "success": true,
+  "message": "Data found.",
+  "data": { "id": 1, "name": "Romit", "email": "rm@eazemyapi.com" }
+}
+```
+
+**Error:**
 ```json
 {
   "success": false,
-  "message": "Record not found.",
-  "data": null
+  "message": "Data not found",
+  "data": []
 }
 ```
 
-Always check `success` before using `data`.
+**Always check `success` before processing `data`.**
 
 ---
 
-## Code Patterns
+### Custom Queries
 
-Replace `my-project` / `posts` / `v2` with your actual project name, table, and version.
+For joins, filters, aggregations, or complex logic — write SQL and EazeMyAPI exposes it as an endpoint.
 
-### List all records — GET
-```js
-const res = await fetch("https://api.eazemyapi.com/my-project/posts/v2/list", {
-  headers: {
-    "Content-Type": "application/json",
-    "X-API-SIGNATURE": process.env.API_KEY
-  }
-});
-const { success, data } = await res.json();
-if (success) setPosts(data);
-```
-
-### Show single record — GET
-```js
-const id = 1;
-const res = await fetch(`https://api.eazemyapi.com/my-project/posts/v2/show/${id}`, {
-  headers: { "X-API-SIGNATURE": process.env.API_KEY }
-});
-const { success, data } = await res.json();
-```
-
-### Create record — POST
-```js
-const res = await fetch("https://api.eazemyapi.com/my-project/posts/v2/create", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "X-API-SIGNATURE": process.env.API_KEY
-  },
-  body: JSON.stringify({ title: "Hello World", content: "My first post" })
-});
-const { success, data } = await res.json();
-```
-
-### Update record — POST (with ID in URL)
-```js
-const id = 1;
-const res = await fetch(`https://api.eazemyapi.com/my-project/posts/v2/update/${id}`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "X-API-SIGNATURE": process.env.API_KEY
-  },
-  body: JSON.stringify({ title: "Updated Title" })
-});
-```
-
-### Delete record — DELETE (with ID in URL)
-```js
-const id = 1;
-const res = await fetch(`https://api.eazemyapi.com/my-project/posts/v2/delete/${id}`, {
-  method: "DELETE",
-  headers: { "X-API-SIGNATURE": process.env.API_KEY }
-});
-```
-
-### Custom query endpoint — GET
-```js
-const res = await fetch("https://api.eazemyapi.com/my-project/v2/posts-by-category?category_id=abc", {
-  headers: { "X-API-SIGNATURE": process.env.API_KEY }
-});
-// Note: custom queries use /{project}/{version}/{endpoint} — no table in path
-```
-
-### Vercel Serverless Proxy (secure API key for public frontends)
-```js
-// /api/proxy.js — handles both CRUD and custom endpoints
-export default async function handler(req, res) {
-  const { path, ...params } = req.query; // path = "posts/v2/list" or "v2/custom-endpoint"
-  const qs = new URLSearchParams(params).toString();
-  const url = `https://api.eazemyapi.com/my-project/${path}${qs ? "?" + qs : ""}`;
-
-  const response = await fetch(url, {
-    method: req.method,
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-SIGNATURE": process.env.EAZE_API_KEY
-    },
-    body: req.method === "POST" ? JSON.stringify(req.body) : undefined
-  });
-
-  const data = await response.json();
-  res.status(response.status).json(data);
-}
-```
-
----
-
-## Field Types
-
-| Type | Use For | Example |
-|------|---------|---------|
-| `TEXT` | Short strings — names, titles | `"Romit"` |
-| `PARAGRAPH` | Long text — bios, descriptions, content | `"Full post body..."` |
-| `NUMBER` | Integers — age, count, ID | `42` |
-| `DECIMAL` | Floats — price, rating | `4.8` |
-| `DATE` | Calendar date | `"2026-03-29"` |
-| `DATETIME` | Timestamp | `"2026-03-29T10:30:00Z"` |
-| `EMAIL` | Email address | `"rm@eazemyapi.com"` |
-| `PHONE` | Phone number | `"+91 9876543210"` |
-| `PASSWORD` | Encrypted password | stored hashed |
-| `BOOLEAN` | True/false flags | `true` |
-
----
-
-## Custom Queries
-
-For joins, aggregations, filters, or reports — write raw SQL in the dashboard and EazeMyAPI exposes it as an endpoint.
-
-**Dashboard:** `Project → Custom Queries → Create Query`
-
-**Example SQL:**
+**Example query:**
 ```sql
-SELECT 
+SELECT
   categories.id AS category_id,
   categories.name AS category_name,
   posts.id AS post_id,
@@ -255,77 +148,183 @@ JOIN posts ON posts.category_id = categories.id
 WHERE categories.name = 'Foods';
 ```
 
-This auto-generates:
+**Generated endpoint:**
 ```
 https://api.eazemyapi.com/my-project/v2/posts-by-category
 ```
-Note: custom query URL has **no table segment** — `/{project}/{version}/{endpoint}` only.
 
-**Parameterized queries** — use `:param` syntax in SQL:
+**With parameters (`:param` syntax):**
 ```sql
 SELECT * FROM posts WHERE category_id = :category_id;
 ```
+```
+GET /posts-by-category?category_id=abc123
+```
 
-Then call: `?category_id=abc-123`
-
----
-
-## Schema Design Best Practices
-
-When designing tables for EazeMyAPI:
-
-1. **Always add `created_at` (DATETIME)** — useful for sorting and filtering
-2. **Use `BOOLEAN` for status flags** — `is_active`, `is_published`, `is_verified`
-3. **Use `TEXT` for slugs and IDs from external systems**
-4. **Store foreign keys as `TEXT`** (UUIDs) or `NUMBER` (integer IDs)
-5. **Use `PARAGRAPH` for any content > 255 chars**
-6. **Name endpoints descriptively** — EazeMyAPI mirrors your table name, keep it clean
-
-**Example `posts` table:**
-| Field | Type |
-|-------|------|
-| id | NUMBER |
-| title | TEXT |
-| content | PARAGRAPH |
-| author_id | NUMBER |
-| category | TEXT |
-| is_published | BOOLEAN |
-| created_at | DATETIME |
+**Create via dashboard:** Project → Custom Queries → Create Query → Write SQL → Save → endpoint auto-generated.
 
 ---
 
-## Common Gotchas
+## Field Types
 
-- **CRUD URLs include the table name**: `/{project}/{table}/{version}/{action}` — don't skip the table segment
-- **Custom query URLs do NOT have a table**: `/{project}/{version}/{custom-endpoint}`
-- **Update uses POST, not PUT/PATCH** — this is intentional in EazeMyAPI
-- **ID goes in the URL path** for `show/:id`, `update/:id`, `delete/:id` — not as `?id=1`
-- **Always check `success: true`** before reading `data` — don't assume
-- **API key is project-scoped** — one key per project, shared across all tables
-- **Versions are chosen by you** — `v1`, `v2`, etc., set in the dashboard when generating
+| Type | Use for |
+|---|---|
+| `TEXT` | Short text: names, titles, usernames |
+| `NUMBER` | Integers: age, quantity, IDs |
+| `PARAGRAPH` | Long text: descriptions, bios, blog content |
+| `DECIMAL` | Prices, ratings, percentages |
+| `DATE` | Calendar dates: birth date, event date |
+| `DATETIME` | Timestamps: created_at, updated_at |
+| `PASSWORD` | Stored encrypted |
+| `EMAIL` | Valid email addresses |
+| `PHONE` | Phone numbers |
+| `BOOLEAN` | true/false: is_active, is_verified |
+
+**Example users table:**
+```
+id          → NUMBER
+name        → TEXT
+email       → EMAIL
+phone       → PHONE
+bio         → PARAGRAPH
+is_active   → BOOLEAN
+created_at  → DATETIME
+```
 
 ---
 
-## Integration Checklist
+## Frontend Integration Patterns
 
-When helping a user integrate EazeMyAPI into their app:
+### JavaScript / React (fetch)
+```javascript
+const res = await fetch(
+  "https://api.eazemyapi.com/{project}/{version}/{endpoint}",
+  {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-SIGNATURE": process.env.EAZEMYAPI_SECRET_KEY
+    }
+  }
+);
+const { success, data, message } = await res.json();
+if (!success) throw new Error(message);
+```
 
-- [ ] Confirm project name, table name, and version (e.g. `soche-india`, `posts`, `v2`)
-- [ ] For CRUD: use `/{project}/{table}/{version}/{action}` pattern
-- [ ] For custom queries: use `/{project}/{version}/{custom-endpoint}` pattern
-- [ ] Actions are: `list`, `show/:id`, `create`, `update/:id`, `delete/:id`
-- [ ] `update` uses **POST**, not PUT
-- [ ] ID is in **URL path** for show/update/delete, never a query param
-- [ ] Always include `X-API-SIGNATURE` header
-- [ ] For React/Next.js frontend — store key in env vars, use Vercel proxy for public apps
-- [ ] Handle `success: false` responses gracefully in the UI
-- [ ] For joins/aggregations → use Custom Queries (different URL pattern)
+### Create a record (POST)
+```javascript
+const res = await fetch(
+  "https://api.eazemyapi.com/my-project/v2/create-user",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-SIGNATURE": process.env.EAZEMYAPI_SECRET_KEY
+    },
+    body: JSON.stringify({ name: "Romit", email: "rm@eazemyapi.com" })
+  }
+);
+```
+
+### React custom hook pattern
+```javascript
+function useEazeAPI(endpoint) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetch(`https://api.eazemyapi.com/${PROJECT}/${VERSION}/${endpoint}`, {
+      headers: { "X-API-SIGNATURE": process.env.REACT_APP_EAZE_KEY }
+    })
+      .then(r => r.json())
+      .then(({ success, data, message }) => {
+        if (!success) throw new Error(message);
+        setData(data);
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [endpoint]);
+
+  return { data, loading, error };
+}
+```
+
+### Vercel serverless function (safe key handling)
+```javascript
+// /api/get-users.js
+export default async function handler(req, res) {
+  const response = await fetch(
+    "https://api.eazemyapi.com/my-project/v2/get-users",
+    {
+      headers: { "X-API-SIGNATURE": process.env.EAZEMYAPI_SECRET_KEY }
+    }
+  );
+  const data = await response.json();
+  res.status(200).json(data);
+}
+```
+Use serverless functions to proxy EazeMyAPI calls when the key must stay server-side.
 
 ---
 
-## Reference Links
-- Full docs: https://doc.eazemyapi.com
-- API endpoints reference: https://doc.eazemyapi.com/docs/api-endpoints
-- Field types: https://doc.eazemyapi.com/docs/field-types
-- Custom queries: https://doc.eazemyapi.com/docs/custom-queries
-- Authentication: https://doc.eazemyapi.com/docs/authentication
+## Design System (EazeMyAPI Dashboard UI)
+
+Apply when building EazeMyAPI's own dashboard. For external SaaS products powered by EazeMyAPI, use that product's own design system or follow the user's direction.
+
+> Full tokens and component CSS: `references/design-tokens.md`
+
+**Core palette:**
+- Sidebar: `#0f1729` (dark navy)
+- Background: `#f8f9fc` (light grey)
+- Cards: `#ffffff` with `border: 1px solid #e5e7eb`
+- Primary accent: `#6366f1` (indigo/purple)
+- Success: `#10b981` | Warning: `#f59e0b` | Error: `#ef4444`
+
+**Module page layout pattern:**
+1. Page header — title + description + primary action button
+2. Stats row (optional) — 3–4 small stat cards
+3. Main table/list card — with search/filter
+4. Empty state — shown when no data exists
+
+---
+
+## Beta UX Principles
+
+EazeMyAPI is in beta. Keep UI simple and approachable:
+
+1. **Plain language** — "Run every day at 9am" not "0 9 * * *"
+2. **Progressive disclosure** — Hide advanced options behind toggles
+3. **Sensible defaults** — Pre-fill reasonable values
+4. **Inline feedback** — Toast notifications for all actions
+5. **Empty states** — Always include with a helpful CTA
+
+---
+
+## Code Output Guidelines
+
+- **React**: Functional components + hooks. Tailwind preferred. Lucide icons. No `<form>` tags.
+- **HTML**: Single-file with inline `<style>` + CSS variables.
+- **Node.js / Vercel**: Default for server-side API proxying.
+- **Other stacks**: Match the user's stack (Python, Flutter, etc.).
+- Always check `success` field — don't just rely on HTTP status.
+- Never hardcode `X-API-SIGNATURE` — always use env vars.
+
+---
+
+## Reference Files
+
+- `references/modules.md` — EazeMyAPI dashboard module specs
+- `references/design-tokens.md` — Full CSS variables and component snippets
+
+---
+
+## Quick-Start Checklist
+
+- [ ] Identify task: UI / API integration / Schema design
+- [ ] For API calls: use `/{project}/{version}/{endpoint}` URL structure
+- [ ] Always include `X-API-SIGNATURE` header from env var
+- [ ] Always check `success` field before using `data`
+- [ ] For complex queries: use Custom Queries (SQL → auto endpoint)
+- [ ] For UI: apply design system only for EazeMyAPI dashboard; otherwise follow product style
+- [ ] Include loading states, error handling, and empty states
