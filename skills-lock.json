@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "eazemyapi": {
+      "source": "eazemyapi/eazemyapi-skill",
+      "sourceType": "github",
+      "computedHash": "dcd0961166d9d93a2647e683bc7e8e642b8e8fc72c48bf25c54c44f3d43abbac"
+    }
+  }
+}
